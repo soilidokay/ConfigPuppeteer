@@ -1,0 +1,14 @@
+{
+  "name": "ScanData",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Unmatched TaiNguyen",
+  "license": "MIT",
+  "scripts": {
+    "start": "nodemon"
+  },
+  "dependencies": {
+    "nodemon": "^1.19.1",
+    "puppeteer": "^1.18.0"
+  }
+}
