@@ -73,7 +73,7 @@ class BaseService {
             return obj
         }, ObjectStruct)
 
-        return DataObject
+        return DataObject 
     }
     /**
     * Athor: Unmatched Tai Nguyen - Create : 29 /06 /2019 - 16 :08 :33 
@@ -124,8 +124,9 @@ class BaseService {
     */
     _Loop = async (action, ...params) => {
         let isRestart = true
-        let result;
-        while (isRestart) {
+        let count  = 0;
+        let result = null;
+        while (isRestart && count < 5) {
             result = await action(...params).then((value) => {
                 isRestart = false
                 return value
@@ -133,6 +134,7 @@ class BaseService {
                 console.log(err)
                 console.log('--------------------Restart---------------------')
             })
+            count++;
         }
         return result
     }
@@ -152,10 +154,10 @@ class BaseService {
     _ClosePage = async () => {
         await this._PageCurrent.close()
     }
-    _click = async (selector, num) => {
+    _click = async (selector,action, num) => {
         await Promise.all([
             this._PageCurrent.click(selector),
-            this._PageCurrent.waitForNavigation({ waitUntil: 'networkidle2' }),
+            action?action():this._PageCurrent.waitForNavigation({ waitUntil: 'networkidle2' }),
         ]).catch((err) => {
             console.log(err)
         });

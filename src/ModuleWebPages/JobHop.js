@@ -28,45 +28,16 @@ getSeoTitle = (input) => {
 * Athor: Unmatched Tai Nguyen - 26 /06 /2019 - 20 :13 :07 
 *
 */
-class VietNameWork extends BaseService {
+class JobHop extends BaseService {
     constructor(browser) {
         super(browser)
         this.run = this._run.bind(this)
         this.GetLinkPage = this._GetLinkPage.bind(this)
         this.GetIndex = this._GetIndex.bind(this)
         this.GetInfoPageJob = this._GetInfoPageJob.bind(this)
-        this.GetListLinks = this._GetListLinks.bind(this)
     }
 
 
-    /**
-        * Athor: Unmatched Tai Nguyen - Create : 29 /06 /2019 - 16 :08 :33 
-        *Hàm select nhiều item với tham số @param ItemSelector 
-        *Tham số @param GetData là một phương thức nhận các từng item từ việc select
-        * Tham số @param Filter là phương thức đinh nghĩa việc lộc dữ liệu
-        */
-    _GetListLinks = async (ItemSelector, GetData, Filter) => {
-
-        Filter = Filter ? Filter : (item) => true
-
-        console.log("......... Start Get Link Job Detail one page")
-
-        const ActionSelect = (ItemSelector, GetData, Filter) => {
-
-            let tmps = document.querySelectorAll(ItemSelector)
-            let datas = []
-            for (let i = 0; i < tmps.length; i++) {
-                if (Filter(tmps[i])) {
-                    datas.push(GetData(tmps[i]))
-                }
-            }
-            return datas
-
-        }
-        const tmp = await this.newEvaluate(this._PageCurrent, ActionSelect, ItemSelector, GetData, Filter)
-        // console.log(tmp)
-        return tmp
-    }
 
     /**
     * Athor: Unmatched Tai Nguyen - Create : 27 /06 /2019 - 01 :04 :07 
@@ -81,59 +52,40 @@ class VietNameWork extends BaseService {
     *
     */
     _GetLinkPage = async () => {
-        let isStop = false
-        let index = 3
-        let pageCurrent = 1
-        let LinkJobDetail = []
-        console.log("Start Get Link Job Detail")
 
-        while (!isStop) {
+        await this.Loop(this.start, 'https://www.jobhop.vn/vi');
+        console.log('connect to page search succsess')
+        let tmp = null
+        await this._PageCurrent.click('.top-industries ul li div')
+        await this._PageCurrent.waitFor(() => {
+            return document.querySelector('.job-list h4 a') !== null
+        })
 
-            const tmp = await this.GetListLinks('.job-item-info',
-                (item) => {
-                    return item.querySelector('h3 a').getAttribute('href')
-                },
-                (item) => {
-                    let luong = item.querySelector('div:nth-child(2) span:nth-child(2) strong').innerText.trim()
-                    return /[0-9]/.test(luong)
-                })
-
-            LinkJobDetail.push(...tmp)
-
-            /**
-             * =====================================================
-             */
-
-            const CurrentText = await this._PageCurrent.evaluate(() => {
-                return document.querySelector('.job-item h3').innerText
-            })
-
-            let tmps = await this._PageCurrent.evaluate(() => {
-                let tmps = document.querySelectorAll('a.ais-pagination--link')
-                let datas = []
-                for (let i = 0; i < tmps.length; i++) {
-                    datas.push(tmps[i].innerText)
+        do {
+            await this.click('.jobs-holder.container .primary-button.button span',
+                () => {
+                    return this._PageCurrent.waitFor(() => {
+                        return document.querySelectorAll('#app > div').length < 2
+                    })
                 }
-                return datas
+            );
+            tmp = await this._PageCurrent.evaluate(() => {
+                return document.querySelector('.jobs-holder.container .primary-button.button span') != null
             })
+        } while (tmp)
 
+        // await this._PageCurrent.screenshot({ path: `img/click${'jobhop'}.png` });
+        let LinkJobDetail = await this._PageCurrent.evaluate(() => {
+            let tmps = document.querySelectorAll('.job-list .row.job-list-item');
+            let links = []
             for (let i = 0; i < tmps.length; i++) {
-                if (tmps[i] == pageCurrent) {
-                    index = i + 5
-                    pageCurrent = tmps[i + 1]
-                    break;
+                let salaryEle = tmps[i].querySelector('p span:nth-child(3)')
+                if (salaryEle && /[0-9]/.test(salaryEle.innerText)) {
+                    links.push('https://www.jobhop.vn' + tmps[i].querySelector('h4 a').getAttribute('href'))
                 }
             }
-
-            if (index == 10) break
-
-            await this._PageCurrent.click(`.ais-pagination.pagination.pagination-lg li:nth-child(${index}) a`)
-
-            await this._PageCurrent.waitFor((CurrentText) => {
-                return document.querySelector('.job-item h3').innerText !== CurrentText
-            }, {}, CurrentText)
-
-        }
+            return links
+        })
         return LinkJobDetail
     }
 
@@ -143,7 +95,6 @@ class VietNameWork extends BaseService {
     *
     */
     _GetInfoPageJob = async (page, url, num) => {
-        url = 'https://www.vietnamworks.com' + url
         console.log('connect to :', url)
 
         await this.Loop(this.start, url)
@@ -152,17 +103,17 @@ class VietNameWork extends BaseService {
 
         let res = await this.GetDataWithStruct(this._PageCurrent, {
             MaCongTy: () => {
-                let taget = document.querySelector('.company-name a')
+                let taget = document.querySelector('#job-detail .body.container table tr td:nth-child(2)')
                 return taget ? taget.innerText.trim() : ''
             },
             TenCongTy: () => {
-                let taget = document.querySelector('.company-name a')
+                let taget = document.querySelector('#job-detail .body.container table tr td:nth-child(2)')
                 return taget ? taget.innerText.trim() : ''
             },
             Luong: () => {
-                let taget = document.querySelector('.salary strong')
+                let taget = document.querySelector('#job-detail .body.container table tr:nth-child(2) td:nth-child(2)')
 
-                let Salarys = /\d+/.exec((taget ? taget.innerText : '0,0').replace(/'\$'/gi))
+                let Salarys = /\d+/.exec((taget ? taget.innerText : '0,0').replace(/\$|[.]/gi, ''))
                 if (Salarys == null) Salarys = []
                 Salarys[0] = (+Salarys[0] || 0)
                 Salarys[1] = (+Salarys[1] || 0)
@@ -170,13 +121,23 @@ class VietNameWork extends BaseService {
                     LuongToiThieu: Salarys[0],
                     LuongToiDa: Salarys[1]
                 }
+
             },
-            lstSkilltext: () => {
-                let taget = document.querySelector('.box-summary.link-list div:nth-child(4) .summary-content span:nth-child(2)')
-                if (!taget) return []
-                let lstSkill = taget.innerText.trim()
-                return lstSkill
+            lstSkill: () => {
+                let eleLi = document.querySelectorAll('#job-detail .body.container > section')[1]
+                return eleLi.innerText;
             }
+            // lstSkill: () => {
+            //     let taget = document.querySelector('.box-summary.link-list div:nth-child(4) .summary-content span:nth-child(2)')
+            //     if (!taget) return []
+            //     let lstSkill = taget.innerText.trim().split(',')
+            //     return lstSkill.map(item => {
+            //         return {
+            //             MaSkill: item,
+            //             TenSkill: item
+            //         }
+            //     })
+            // }
 
         })
 
@@ -198,38 +159,32 @@ class VietNameWork extends BaseService {
     }
     _run = async () => {
         await this.Init()
-        await this.Login()
         //get Links JobDetail
 
-        // console.log('connect Page search success')
-        // await this.Loop(this.start, 'https://www.vietnamworks.com/viec-lam-it-phan-mem-i35-vn', 'page search')
 
         // let LinkJobDetail = await this.GetLinkPage()
 
         // console.log(LinkJobDetail)
 
-        // fs.writeFileSync('data/LinkJobDetailVietNameWork.json', JSON.stringify(LinkJobDetail));
+        // fs.writeFileSync('data/LinkJobDetailJobHop.json', JSON.stringify(LinkJobDetail));
 
-        //=====================
-        let LinkJobDetail = JSON.parse(fs.readFileSync('data/LinkJobDetailVietNameWork.json', 'utf8'))
-
-       
+        // //=====================
+        let LinkJobDetail = JSON.parse(fs.readFileSync('data/LinkJobDetailJobHop.json', 'utf8'))
         let Skills = require('../../data/ChitietLinVucSkill.json')
 
+        let length = LinkJobDetail.length
         let index = 0
         let lstJobs = []
-        let length = LinkJobDetail.length
-
         while (LinkJobDetail.length > 0) {
             let Jobs = await this.Loop(this.GetInfoPageJob, this._PageCurrent, LinkJobDetail.shift())
-            
-            lstJobs.push(Jobs)
             index++
+
             let maSkills = new Set()
 
             Skills.forEach(skill => {
                 let strRegex = new RegExp(skill.Skills)
-                if (strRegex.test(Jobs.lstSkilltext.toUpperCase())) {
+                if (strRegex.test(Jobs.lstSkill.toUpperCase())) {
+                    console.log(skill.maskill)
                     maSkills.add(skill.maskill)
                 }
             })
@@ -242,6 +197,7 @@ class VietNameWork extends BaseService {
         }
 
         fs.writeFileSync('data/lstJobsHop.json', JSON.stringify(lstJobs))
+
     }
 }
-module.exports = VietNameWork
+module.exports = JobHop
