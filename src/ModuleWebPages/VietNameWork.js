@@ -179,7 +179,7 @@ class VietNameWork extends BaseService {
             }
 
         })
-
+        res.link = url
         res.MaCongTy = getSeoTitle(res.MaCongTy)
 
         return res
@@ -233,7 +233,6 @@ class VietNameWork extends BaseService {
                     maSkills.add(skill.maskill)
                 }
             })
-
             Jobs.lstSkill = maSkills.size > 0 ? [...maSkills] : []
             lstJobs.push(Jobs)
             console.log('Saved index', index, '/', length)

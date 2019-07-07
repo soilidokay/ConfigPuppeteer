@@ -142,7 +142,7 @@ class JobHop extends BaseService {
         })
 
         res.MaCongTy = getSeoTitle(res.MaCongTy)
-
+        res.link = url
         return res
     }
     Login = async () => {
