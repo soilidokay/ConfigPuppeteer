@@ -16,32 +16,63 @@ class BaseService {
         this.GetDataWithStruct = this._GetDataWithStruct.bind(this)
         this.TranSformData = this._TranSformData.bind(this)
         this.LoginBase = this._LoginBase.bind(this)
+        this.CheckSkill = this._CheckSkill.bind(this)
+
+        
+    }
+    /**
+   * Athor: Unmatched Tai Nguyen - Create : 14 /07 /2019 - 10 :13 :23 
+   *
+   */
+    _CheckSkill = (infokill, lstCheck) => {
+        let maSkills = new Set()
+        let linhvucs =  new Set()
+        lstCheck.forEach(skill => {
+            let strRegex = new RegExp(skill.Skills)
+            if (strRegex.test(infokill.toUpperCase())) {
+                console.log(skill.maskill)
+                maSkills.add(skill.maskill)
+                linhvucs.add(skill.malinhvuc)
+            }
+
+        })
+
+        let max = 0;
+        let linhvuc = ''
+        for (let key in linhvucs) {
+            if (linhvucs[key] > max) {
+                max = linhvucs[key]
+                linhvuc = key;
+            }
+        }
+
+        return maSkills.size > 0 ? { linhvuc:[...linhvucs], listkill: [...maSkills] } : { linhvuc, listkill: [] }
     }
 
-  /**
-    * Athor: Unmatched Tai Nguyen - Create : 26 /06 /2019 - 20 :24 :40 
-    *
-    */
-   _LoginBase = async (Query,Info) => {
-    console.log('Start login Browser VietNameWork')
-    await this.start(Query.urlLogin, 'Page Login')
+    /**
+      * Athor: Unmatched Tai Nguyen - Create : 26 /06 /2019 - 20 :24 :40 
+      *
+      */
+    _LoginBase = async (Query, Info) => {
+        console.log('Start login Browser :'+Query.urlLogin)
+        await this.start(Query.urlLogin, 'Page Login')
 
-    await this.SendInputtag(Query.InputAccout,Info.Acount)
-    await this.SendInputtag(Query.InputPass,Info.PassWord)
+        await this.SendInputtag(Query.InputAccout, Info.Acount)
+        await this.SendInputtag(Query.InputPass, Info.PassWord)
 
-    await this.click(Query.BtnSumit)
+        await this.click(Query.BtnSumit)
 
-    await this._PageCurrent.screenshot({ path: 'img/loginvietnamwork.png' });
+        await this._PageCurrent.screenshot({ path: 'img/loginvietnamwork.png' });
 
-    // await this.ClosePageCurrent()
-    console.log('End login Browser VietNameWork')
+        // await this.ClosePageCurrent()
+        console.log('End login Browser')
 
-}
+    }
     /**
     * Athor: Unmatched Tai Nguyen - Create : 29 /06 /2019 - 17 :42 :52 
     *
     */
-    _TranSformData =async (page, fn, rawArgs) => {
+    _TranSformData = async (page, fn, rawArgs) => {
         let keys = Object.keys(rawArgs)
         const args = await Promise.all(keys.map(key => {
             return typeof rawArgs[key] === 'function'
@@ -49,11 +80,11 @@ class BaseService {
                 : rawArgs[key];
         }));
 
-        let objs = await page.evaluate(fn, ...args).catch((err)=>{
-            console.log("Error Query:",err)
+        let objs = await page.evaluate(fn, ...args).catch((err) => {
+            console.log("Error Query:", err)
         });
         let Datas = {}
-        objs.forEach((element,index) => {
+        objs.forEach((element, index) => {
             Datas[keys[index]] = element
         });
         return Datas
@@ -63,7 +94,7 @@ class BaseService {
     * Athor: Unmatched Tai Nguyen - Create : 29 /06 /2019 - 17 :17 :38 
     *
     */
-    _GetDataWithStruct =async (page, ObjectStruct) => {
+    _GetDataWithStruct = async (page, ObjectStruct) => {
 
         let DataObject = await this.TranSformData(page, (...args) => {
             let obj = []
@@ -73,7 +104,7 @@ class BaseService {
             return obj
         }, ObjectStruct)
 
-        return DataObject 
+        return DataObject
     }
     /**
     * Athor: Unmatched Tai Nguyen - Create : 29 /06 /2019 - 16 :08 :33 
@@ -124,7 +155,7 @@ class BaseService {
     */
     _Loop = async (action, ...params) => {
         let isRestart = true
-        let count  = 0;
+        let count = 0;
         let result = null;
         while (isRestart && count < 5) {
             result = await action(...params).then((value) => {
@@ -154,10 +185,10 @@ class BaseService {
     _ClosePage = async () => {
         await this._PageCurrent.close()
     }
-    _click = async (selector,action, num) => {
+    _click = async (selector, action, num) => {
         await Promise.all([
             this._PageCurrent.click(selector),
-            action?action():this._PageCurrent.waitForNavigation({ waitUntil: 'networkidle2' }),
+            action ? action() : this._PageCurrent.waitForNavigation({ waitUntil: 'networkidle2' }),
         ]).catch((err) => {
             console.log(err)
         });

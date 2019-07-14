@@ -52,11 +52,15 @@ class JobHop extends BaseService {
     *
     */
     _GetLinkPage = async () => {
-
+        /**
+         * Conect to page
+         */
         await this.Loop(this.start, 'https://www.jobhop.vn/vi');
         console.log('connect to page search succsess')
         let tmp = null
+
         await this._PageCurrent.click('.top-industries ul li div')
+
         await this._PageCurrent.waitFor(() => {
             return document.querySelector('.job-list h4 a') !== null
         })
@@ -94,7 +98,7 @@ class JobHop extends BaseService {
     * Athor: Unmatched Tai Nguyen - Create : 27 /06 /2019 - 14 :22 :52 
     *
     */
-    _GetInfoPageJob = async (page, url, num) => {
+    _GetInfoPageJob = async (page, url, callback, num) => {
         console.log('connect to :', url)
 
         await this.Loop(this.start, url)
@@ -113,7 +117,7 @@ class JobHop extends BaseService {
             Luong: () => {
                 let taget = document.querySelector('#job-detail .body.container table tr:nth-child(2) td:nth-child(2)')
 
-                let Salarys = /\d+/.exec((taget ? taget.innerText : '0,0').replace(/\$|[.]/gi, ''))
+                let Salarys = (taget ? taget.innerText : '0,0').replace(/\$|\./gi, '').match(/\d+/g)
                 if (Salarys == null) Salarys = []
                 Salarys[0] = (+Salarys[0] || 0)
                 Salarys[1] = (+Salarys[1] || 0)
@@ -123,27 +127,15 @@ class JobHop extends BaseService {
                 }
 
             },
-            lstSkill: () => {
+            lstSkillText: () => {
                 let eleLi = document.querySelectorAll('#job-detail .body.container > section')[1]
                 return eleLi.innerText;
             }
-            // lstSkill: () => {
-            //     let taget = document.querySelector('.box-summary.link-list div:nth-child(4) .summary-content span:nth-child(2)')
-            //     if (!taget) return []
-            //     let lstSkill = taget.innerText.trim().split(',')
-            //     return lstSkill.map(item => {
-            //         return {
-            //             MaSkill: item,
-            //             TenSkill: item
-            //         }
-            //     })
-            // }
 
         })
 
-        res.MaCongTy = getSeoTitle(res.MaCongTy)
-        res.link = url
-        return res
+
+        return callback ? callback(res) : res
     }
     Login = async () => {
         return await this.LoginBase(
@@ -157,39 +149,51 @@ class JobHop extends BaseService {
                 PassWord: 'GialonG1'
             })
     }
+
+
+
+
     _run = async () => {
         await this.Init()
         //get Links JobDetail
 
 
-        // let LinkJobDetail = await this.GetLinkPage()
+        let LinkJobDetail = await this.GetLinkPage()
 
-        // console.log(LinkJobDetail)
+        console.log(LinkJobDetail)
 
         // fs.writeFileSync('data/LinkJobDetailJobHop.json', JSON.stringify(LinkJobDetail));
 
         // //=====================
-        let LinkJobDetail = JSON.parse(fs.readFileSync('data/LinkJobDetailJobHop.json', 'utf8'))
+        //let LinkJobDetail = JSON.parse(fs.readFileSync('data/LinkJobDetailJobHop.json', 'utf8'))
         let Skills = require('../../data/ChitietLinVucSkill.json')
 
         let length = LinkJobDetail.length
         let index = 0
         let lstJobs = []
+
         while (LinkJobDetail.length > 0) {
-            let Jobs = await this.Loop(this.GetInfoPageJob, this._PageCurrent, LinkJobDetail.shift())
+            
+            let url = LinkJobDetail.shift()
+
+            let Jobs = await this.Loop(
+                this.GetInfoPageJob,
+                this._PageCurrent,
+                url,
+                (res) => {
+
+                    res.MaCongTy = getSeoTitle(res.MaCongTy)
+                    res.link = url
+
+                    let maSkills = this.CheckSkill(res.lstSkillText, Skills)
+                    res.lstSkill = maSkills.listkill
+                    res.linhvuc = maSkills.linhvuc
+                    return res
+                }
+            )
+
             index++
 
-            let maSkills = new Set()
-
-            Skills.forEach(skill => {
-                let strRegex = new RegExp(skill.Skills)
-                if (strRegex.test(Jobs.lstSkill.toUpperCase())) {
-                    console.log(skill.maskill)
-                    maSkills.add(skill.maskill)
-                }
-            })
-
-            Jobs.lstSkill = maSkills.size > 0 ? [...maSkills] : []
             lstJobs.push(Jobs)
             console.log('Saved index', index, '/', length)
             fs.writeFileSync('data/lstJobsHop.json', JSON.stringify(lstJobs))

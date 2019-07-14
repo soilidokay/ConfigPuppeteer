@@ -24,11 +24,12 @@ getSeoTitle = (input) => {
 
     return slug;
 }
+
 /**
 * Athor: Unmatched Tai Nguyen - 26 /06 /2019 - 20 :13 :07 
 *
 */
-class VietNameWork extends BaseService {
+class TopCV extends BaseService {
     constructor(browser) {
         super(browser)
         this.run = this._run.bind(this)
@@ -83,18 +84,19 @@ class VietNameWork extends BaseService {
     _GetLinkPage = async () => {
         let isStop = false
         let index = 0
-        let pageNext = 2
+        let pageNext = '2'
         let LinkJobDetail = []
         console.log("Start Get Link Job Detail")
 
         while (!isStop) {
+            console.log(`.........connect page : ${pageNext-1}  Link Job Detail one page`)
 
-            const tmp = await this.GetListLinks('.job-item-info',
+            const tmp = await this.GetListLinks('.job-list.search-result>div',
                 (item) => {
-                    return item.querySelector('h3 a').getAttribute('href')
+                    return item.querySelector('.job-title a').getAttribute('href')
                 },
                 (item) => {
-                    let luong = item.querySelector('div:nth-child(2) span:nth-child(2) strong').innerText.trim()
+                    let luong = item.querySelector('#row-result-info-job .salary').innerText.trim()
                     return /[0-9]/.test(luong)
                 })
 
@@ -103,10 +105,6 @@ class VietNameWork extends BaseService {
             /**
              * =====================================================
              */
-
-            const CurrentText = await this._PageCurrent.evaluate(() => {
-                return document.querySelector('.job-item h3').innerText
-            })
 
             let tmps = await this._PageCurrent.evaluate(() => {
                 let tmps = document.querySelectorAll('.pagination>li')
@@ -119,28 +117,26 @@ class VietNameWork extends BaseService {
 
             for (let i = 0; i < tmps.length; i++) {
                 if (tmps[i] == pageNext) {
-                    index = i + 1;
+                    index = i + 1
                     pageNext++;
                     break;
                 }
             }
 
-
             if (
                 await this._PageCurrent.evaluate((index) => {
-                    return !document.querySelector(`.ais-pagination.pagination.pagination-lg li:nth-child(${index}) a`)
+                    return !document.querySelector(`.pagination>li:nth-child(${index})>a`)
                 },index)
             ){
                 break;
             }
 
-                await this._PageCurrent.click(`.ais-pagination.pagination.pagination-lg li:nth-child(${index}) a`)
-
-            await this._PageCurrent.waitFor((CurrentText) => {
-                return document.querySelector('.job-item h3').innerText !== CurrentText
-            }, {}, CurrentText)
+            await this.click(`.pagination>li:nth-child(${index})>a`)
+            //   await this._PageCurrent.screenshot({ path: `img/${index}.png` ,fullPage:true});
 
         }
+        console.log("End Get Link Job Detail")
+
         return LinkJobDetail
     }
 
@@ -149,8 +145,7 @@ class VietNameWork extends BaseService {
     * Athor: Unmatched Tai Nguyen - Create : 27 /06 /2019 - 14 :22 :52 
     *
     */
-    _GetInfoPageJob = async (page, url, callback, num) => {
-        url = 'https://www.vietnamworks.com' + url
+    _GetInfoPageJob = async (page, url,callback, num) => {
         console.log('connect to :', url)
 
         await this.Loop(this.start, url)
@@ -159,27 +154,27 @@ class VietNameWork extends BaseService {
 
         let res = await this.GetDataWithStruct(this._PageCurrent, {
             MaCongTy: () => {
-                let taget = document.querySelector('.company-name a')
+                let taget = document.querySelector('.company-title')
                 return taget ? taget.innerText.trim() : ''
             },
             TenCongTy: () => {
-                let taget = document.querySelector('.company-name a')
+                let taget = document.querySelector('.company-title')
                 return taget ? taget.innerText.trim() : ''
             },
             Luong: () => {
-                let taget = document.querySelector('.salary strong')
+                let taget = document.querySelector('#box-info-job .job-info-item:nth-child(1) span')
 
                 let Salarys = (taget ? taget.innerText : '0,0').replace(/\$|\./gi, '').match(/\d+/g)
                 if (Salarys == null) Salarys = []
                 Salarys[0] = (+Salarys[0] || 0)
                 Salarys[1] = (+Salarys[1] || 0)
                 return {
-                    LuongToiThieu: Salarys[0],
-                    LuongToiDa: Salarys[1]
+                    LuongToiThieu: Salarys[0]*1000000,
+                    LuongToiDa: Salarys[1]*1000000
                 }
             },
             lstSkilltext: () => {
-                let taget = document.querySelector('.box-summary.link-list div:nth-child(4) .summary-content span:nth-child(2)')
+                let taget = document.querySelector('#col-job-left')
                 if (!taget) return 'none'
                 let lstSkill = taget.innerText.trim()
                 return lstSkill
@@ -192,13 +187,13 @@ class VietNameWork extends BaseService {
     Login = async () => {
         return await this.LoginBase(
             {
-                urlLogin: 'https://secure.vietnamworks.com/login/vi?client_id=3',
-                InputAccout: '#email',
-                InputPass: '#login__password',
-                BtnSumit: '#button-login'
+                urlLogin: 'https://www.topcv.vn/login',
+                InputAccout: '#form-login input[name="email"]',
+                InputPass: '#form-login input[name="password"]',
+                BtnSumit: '#form-login input[type="submit"]'
             }, {
-                Acount: 'tainguyen.ntt.97@gmail.com',
-                PassWord: 'GialonG1'
+                Acount: 'AnounymousScan@gmail.com',
+                PassWord: 'Scan123@'
             })
     }
 
@@ -206,20 +201,21 @@ class VietNameWork extends BaseService {
         await this.Init()
         await this.Login()
         //get Links JobDetail
+      //  await this._PageCurrent.screenshot({ path: `img/${'loginTopCV'}.png` });
 
-        console.log('connect Page search success')
-        await this.Loop(this.start, 'https://www.vietnamworks.com/viec-lam-it-phan-mem-i35-vn', 'page search')
+        // console.log('connect Page search success')
+        // await this.Loop(this.start, 'https://www.topcv.vn/viec-lam/it-phan-mem-c10026.html?salary=0&exp=0&page=1', 'page search')
 
-        let LinkJobDetail = await this.GetLinkPage()
+        // let LinkJobDetail = await this.GetLinkPage()
 
-        console.log(LinkJobDetail)
+        // console.log(LinkJobDetail)
 
-        // fs.writeFileSync('data/LinkJobDetailVietNameWork.json', JSON.stringify(LinkJobDetail));
+        //  fs.writeFileSync('data/LinkJobDetailTopCV.json', JSON.stringify(LinkJobDetail));
 
         //=====================
-        // let LinkJobDetail = JSON.parse(fs.readFileSync('data/LinkJobDetailVietNameWork.json', 'utf8'))
+        let LinkJobDetail = JSON.parse(fs.readFileSync('data/LinkJobDetailTopCV.json', 'utf8'))
 
-
+       
         let Skills = require('../../data/ChitietLinVucSkill.json')
 
         let index = 0
@@ -248,17 +244,17 @@ class VietNameWork extends BaseService {
                 }
             )
 
-
+            
             lstJobs.push(Jobs)
             index++
-
+          
             lstJobs.push(Jobs)
             console.log('Saved index', index, '/', length)
-            fs.writeFileSync('data/lstJobsHop.json', JSON.stringify(lstJobs))
+            fs.writeFileSync('data/lstTopCVp.json', JSON.stringify(lstJobs))
             console.log(Jobs)
         }
 
-        fs.writeFileSync('data/lstJobsHop.json', JSON.stringify(lstJobs))
+        fs.writeFileSync('data/lstTopCVp.json', JSON.stringify(lstJobs))
     }
 }
-module.exports = VietNameWork
+module.exports =  TopCV

@@ -1,6 +1,5 @@
 const puppeteer = require('puppeteer');
-const VietNameWork = require('./src/ModuleWebPages/VietNameWork');
-const JobHop = require('./src/ModuleWebPages/JobHop');
+const ListWebs = require('./src/ModuleWebPages');
 const skill = require('./data/Skill.json')
 const fs = require('fs');
 // vietnamworks.com, careerlink.vn, careerbuilder,  mywork, vieclam24h, timviecnhanh.com , itviec, topcv
@@ -55,10 +54,10 @@ getSeoTitle = (input) => {
 
 (async () => {
     const browser = await puppeteer.launch();
-
-    let test = new VietNameWork(browser)
-
-    await test.run()
+    for await(let web of ListWebs){
+        let exeWeb = new web(browser)
+        await exeWeb.run()
+    }
     await browser.close();
 })();
 
