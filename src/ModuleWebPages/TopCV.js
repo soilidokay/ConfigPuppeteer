@@ -201,19 +201,19 @@ class TopCV extends BaseService {
         await this.Init()
         await this.Login()
         //get Links JobDetail
-      //  await this._PageCurrent.screenshot({ path: `img/${'loginTopCV'}.png` });
+       await this._PageCurrent.screenshot({ path: `img/${'loginTopCV'}.png` });
 
-        // console.log('connect Page search success')
-        // await this.Loop(this.start, 'https://www.topcv.vn/viec-lam/it-phan-mem-c10026.html?salary=0&exp=0&page=1', 'page search')
+        console.log('connect Page search success')
+        await this.Loop(this.start, 'https://www.topcv.vn/viec-lam/it-phan-mem-c10026.html?salary=0&exp=0&page=1', 'page search')
 
-        // let LinkJobDetail = await this.GetLinkPage()
+        let LinkJobDetail = await this.GetLinkPage()
 
-        // console.log(LinkJobDetail)
+        console.log(LinkJobDetail)
 
-        //  fs.writeFileSync('data/LinkJobDetailTopCV.json', JSON.stringify(LinkJobDetail));
+         fs.writeFileSync('data/LinkJobDetailTopCV.json', JSON.stringify(LinkJobDetail));
 
         //=====================
-        let LinkJobDetail = JSON.parse(fs.readFileSync('data/LinkJobDetailTopCV.json', 'utf8'))
+        //let LinkJobDetail = JSON.parse(fs.readFileSync('data/LinkJobDetailTopCV.json', 'utf8'))
 
        
         let Skills = require('../../data/ChitietLinVucSkill.json')
@@ -227,6 +227,7 @@ class TopCV extends BaseService {
 
             let url = LinkJobDetail.shift()
 
+            console.log(logColor.lightblue('-------------------------------@Start@----------------------------'));
 
             let Jobs = await this.Loop(
                 this.GetInfoPageJob,
@@ -238,23 +239,29 @@ class TopCV extends BaseService {
                     res.link = url
 
                     let maSkills = this.CheckSkill(res.lstSkilltext, Skills)
+                    
+                    if (maSkills.listkill.length < 1) return null
+
                     res.lstSkill = maSkills.listkill
                     res.linhvuc = maSkills.linhvuc
                     return res
                 }
             )
 
-            
-            lstJobs.push(Jobs)
             index++
-          
-            lstJobs.push(Jobs)
-            console.log('Saved index', index, '/', length)
-            fs.writeFileSync('data/lstTopCVp.json', JSON.stringify(lstJobs))
-            console.log(Jobs)
-        }
+            if (Jobs) {
+                lstJobs.push(Jobs)
+                console.log(Jobs)
+                fs.writeFileSync('DataJobs/DataTopCv.json', JSON.stringify(lstJobs))
+                console.log(logColor.green('Saved index'), index, '/', length);
+            }else{
+                
+                console.log(logColor.red('cannot be classified!!!'));
 
-        fs.writeFileSync('data/lstTopCVp.json', JSON.stringify(lstJobs))
+                console.log(logColor.yellow('can\'t save index'), index, '/', length, );
+            }
+            console.log(logColor.lightblue('-------------------------------@End@----------------------------'));
+        }
     }
 }
 module.exports =  TopCV

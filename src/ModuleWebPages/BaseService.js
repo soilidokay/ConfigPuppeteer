@@ -17,6 +17,7 @@ class BaseService {
         this.TranSformData = this._TranSformData.bind(this)
         this.LoginBase = this._LoginBase.bind(this)
         this.CheckSkill = this._CheckSkill.bind(this)
+        this.Sleep = this._Sleep.bind(this)
 
         
     }
@@ -63,7 +64,7 @@ class BaseService {
         await this.click(Query.BtnSumit)
 
         await this._PageCurrent.screenshot({ path: 'img/loginvietnamwork.png' });
-
+        this.Sleep(2)
         // await this.ClosePageCurrent()
         console.log('End login Browser')
 
@@ -149,6 +150,13 @@ class BaseService {
     }
 
 
+/**
+* Athor: Unmatched Tai Nguyen - Create : 15 /07 /2019 - 18 :25 :46 
+*
+*/
+_Sleep = (seconds)=>{
+    return new Promise(resolve => setTimeout(resolve, (seconds || 1) * 1000))
+}
     /**
     * Athor: Unmatched Tai Nguyen - Create : 26 /06 /2019 - 22 :32 :57 
     *

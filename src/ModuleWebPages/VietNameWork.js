@@ -129,12 +129,12 @@ class VietNameWork extends BaseService {
             if (
                 await this._PageCurrent.evaluate((index) => {
                     return !document.querySelector(`.ais-pagination.pagination.pagination-lg li:nth-child(${index}) a`)
-                },index)
-            ){
+                }, index)
+            ) {
                 break;
             }
 
-                await this._PageCurrent.click(`.ais-pagination.pagination.pagination-lg li:nth-child(${index}) a`)
+            await this._PageCurrent.click(`.ais-pagination.pagination.pagination-lg li:nth-child(${index}) a`)
 
             await this._PageCurrent.waitFor((CurrentText) => {
                 return document.querySelector('.job-item h3').innerText !== CurrentText
@@ -214,7 +214,7 @@ class VietNameWork extends BaseService {
 
         console.log(LinkJobDetail)
 
-        // fs.writeFileSync('data/LinkJobDetailVietNameWork.json', JSON.stringify(LinkJobDetail));
+         fs.writeFileSync('data/LinkJobDetailVietNameWork.json', JSON.stringify(LinkJobDetail));
 
         //=====================
         // let LinkJobDetail = JSON.parse(fs.readFileSync('data/LinkJobDetailVietNameWork.json', 'utf8'))
@@ -231,6 +231,7 @@ class VietNameWork extends BaseService {
 
             let url = LinkJobDetail.shift()
 
+            console.log(logColor.lightblue('-------------------------------@Start@----------------------------'));
 
             let Jobs = await this.Loop(
                 this.GetInfoPageJob,
@@ -242,23 +243,29 @@ class VietNameWork extends BaseService {
                     res.link = url
 
                     let maSkills = this.CheckSkill(res.lstSkilltext, Skills)
+
+                    if (maSkills.listkill.length < 1) return null
+
                     res.lstSkill = maSkills.listkill
                     res.linhvuc = maSkills.linhvuc
                     return res
                 }
             )
 
-
-            lstJobs.push(Jobs)
             index++
+            if (Jobs) {
+                lstJobs.push(Jobs)
+                console.log(Jobs)
+                fs.writeFileSync('DataJobs/DataVietnamwork.json', JSON.stringify(lstJobs))
+                console.log(logColor.green('Saved index'), index, '/', length);
+            }else{
+                
+                console.log(logColor.red('cannot be classified!!!'));
 
-            lstJobs.push(Jobs)
-            console.log('Saved index', index, '/', length)
-            fs.writeFileSync('data/lstJobsHop.json', JSON.stringify(lstJobs))
-            console.log(Jobs)
+                console.log(logColor.yellow('can\'t save index'), index, '/', length, );
+            }
+            console.log(logColor.lightblue('-------------------------------@End@----------------------------'));
         }
-
-        fs.writeFileSync('data/lstJobsHop.json', JSON.stringify(lstJobs))
+        }
     }
-}
 module.exports = VietNameWork

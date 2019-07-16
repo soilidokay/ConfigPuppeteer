@@ -53,8 +53,19 @@ getSeoTitle = (input) => {
 
 
 (async () => {
-    const browser = await puppeteer.launch();
-    for await(let web of ListWebs){
+    global.logColor = {
+        red:(str)=>'\u001b[31m' + str + '\u001b[0m',
+        green:(str)=>'\u001b[32m' + str + '\u001b[0m',
+        yellow:(str)=>'\u001b[33m' + str + '\u001b[0m',
+        blue:(str)=>'\u001b[34m' + str + '\u001b[0m',
+        pink:(str)=>'\u001b[35m' + str + '\u001b[0m',
+        lightblue:(str)=>'\u001b[36m' + str + '\u001b[0m',
+    }
+    const browser = await puppeteer.launch(
+        {
+            // devtools: true,
+        });
+    for await (let web of ListWebs) {
         let exeWeb = new web(browser)
         await exeWeb.run()
     }

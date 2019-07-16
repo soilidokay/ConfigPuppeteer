@@ -99,6 +99,8 @@ class JobHop extends BaseService {
     *
     */
     _GetInfoPageJob = async (page, url, callback, num) => {
+
+
         console.log('connect to :', url)
 
         await this.Loop(this.start, url)
@@ -118,9 +120,11 @@ class JobHop extends BaseService {
                 let taget = document.querySelector('#job-detail .body.container table tr:nth-child(2) td:nth-child(2)')
 
                 let Salarys = (taget ? taget.innerText : '0,0').replace(/\$|\./gi, '').match(/\d+/g)
+                let coefficient = 1
+                if (taget && /mil/.test(taget.innerText)) coefficient = 1000000
                 if (Salarys == null) Salarys = []
-                Salarys[0] = (+Salarys[0] || 0)
-                Salarys[1] = (+Salarys[1] || 0)
+                Salarys[0] = (+Salarys[0] || 0) * coefficient
+                Salarys[1] = (+Salarys[1] || 0) * coefficient
                 return {
                     LuongToiThieu: Salarys[0],
                     LuongToiDa: Salarys[1]
@@ -162,7 +166,7 @@ class JobHop extends BaseService {
 
         console.log(LinkJobDetail)
 
-        // fs.writeFileSync('data/LinkJobDetailJobHop.json', JSON.stringify(LinkJobDetail));
+         fs.writeFileSync('data/LinkJobDetailJobHop.json', JSON.stringify(LinkJobDetail));
 
         // //=====================
         //let LinkJobDetail = JSON.parse(fs.readFileSync('data/LinkJobDetailJobHop.json', 'utf8'))
@@ -173,34 +177,43 @@ class JobHop extends BaseService {
         let lstJobs = []
 
         while (LinkJobDetail.length > 0) {
-            
-            let url = LinkJobDetail.shift()
+            let {logColor} = global
 
+            let url = LinkJobDetail.shift()
+            console.log(logColor.lightblue('-------------------------------@Start@----------------------------'));
             let Jobs = await this.Loop(
                 this.GetInfoPageJob,
                 this._PageCurrent,
                 url,
                 (res) => {
-
                     res.MaCongTy = getSeoTitle(res.MaCongTy)
                     res.link = url
 
                     let maSkills = this.CheckSkill(res.lstSkillText, Skills)
+
+                    if (maSkills.listkill.length < 1) return null
+
                     res.lstSkill = maSkills.listkill
                     res.linhvuc = maSkills.linhvuc
                     return res
                 }
             )
-
+            
             index++
+            if (Jobs) {
+                lstJobs.push(Jobs)
+                console.log(Jobs)
+                fs.writeFileSync('DataJobs/DataJobHop.json', JSON.stringify(lstJobs))
+                console.log(logColor.green('Saved index'), index, '/', length);
+            }else{
+                
+                console.log(logColor.red('cannot be classified!!!'));
 
-            lstJobs.push(Jobs)
-            console.log('Saved index', index, '/', length)
-            fs.writeFileSync('data/lstJobsHop.json', JSON.stringify(lstJobs))
-            console.log(Jobs)
+                console.log(logColor.yellow('can\'t save index'), index, '/', length, );
+            }
+            console.log(logColor.lightblue('-------------------------------@End@----------------------------'));
         }
 
-        fs.writeFileSync('data/lstJobsHop.json', JSON.stringify(lstJobs))
 
     }
 }
